@@ -2,20 +2,19 @@ pipeline {
   agent {
     docker {
       image 'nikhildoc911/maven-java21-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' 
     }
   }
   stages {
     stage('Checkout') {
       steps {
         sh 'echo passed'
-          git branch: 'main', url: 'https://github.com/niki087477-lab/Jenkins-Zero-To-Hero.git'
+        git branch: 'main', url: 'https://github.com/niki087477-lab/Jenkins-Zero-To-Hero.git'
       }
     }
     stage('Build and Test') {
       steps {
         sh 'ls -ltr'
-        // build the project and create a JAR file
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
@@ -32,7 +31,6 @@ pipeline {
     stage('Build and Push Docker Image') {
       environment {
         DOCKER_IMAGE = "nikhildoc911/ultimate-cicd:${BUILD_NUMBER}"
-        // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
         REGISTRY_CREDENTIALS = credentials('docker-cred')
       }
       steps {
@@ -51,16 +49,28 @@ pipeline {
             GIT_USER_NAME = "niki087477-lab"
         }
         steps {
-            withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                sh '''
-                    git config user.email "niki087477@gmail.com"
-                    git config user.name "niki087477-lab"
-                    BUILD_NUMBER=${BUILD_NUMBER}
-                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-                '''
+            // FIX: Explicitly enforce workspace root context where .git resides
+            dir("${env.WORKSPACE}") {
+                withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                    sh '''
+                        # 1. Instruct container Git to trust the mounted host filesystem
+                        git config --global --add safe.directory '*'
+                        
+                        # 2. Establish Git identification
+                        git config user.email "niki087477@gmail.com"
+                        git config user.name "niki087477-lab"
+                        
+                        # 3. Modify manifest with current build number
+                        sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                        
+                        # 4. Save and commit tracking data
+                        git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                        
+                        # 5. Securely push back upstream to main branch
+                        git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                    '''
+                }
             }
         }
     }
