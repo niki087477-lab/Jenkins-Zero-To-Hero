@@ -3,7 +3,6 @@
 <p align="center">
 
 ![Jenkins](https://img.shields.io/badge/Jenkins-CI-red?logo=jenkins)
-![Maven](https://img.shields.io/badge/Maven-Build-C71A36?logo=apachemaven)
 ![SonarQube](https://img.shields.io/badge/SonarQube-Code%20Quality-4E9BCD?logo=sonarqube)
 ![Docker](https://img.shields.io/badge/Docker-Container-2496ED?logo=docker)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestration-326CE5?logo=kubernetes)
@@ -176,11 +175,6 @@ Kubernetes deploys the latest version of the application.
 
 ![Jenkins Dashboard](screenshots/jenkins-dashboard.png)
 
----
-
-## Successful Jenkins Pipeline
-
-![Jenkins Pipeline](screenshots/jenkins-pipeline.png)
 
 ---
 
